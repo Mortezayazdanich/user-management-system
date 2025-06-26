@@ -1,0 +1,75 @@
+// Specifies that we are using proto3 syntax.
+syntax = "proto3";
+
+// Defines a package name, which helps to prevent naming conflicts.
+package user;
+
+// The definition of our user service.
+service UserService {
+  // RPC method for registering a new user.
+  rpc RegisterUser (RegisterUserRequest) returns (UserResponse);
+
+  // RPC method for logging a user in.
+  rpc LoginUser (LoginUserRequest) returns (LoginUserResponse);
+
+  // RPC method for getting a user's profile information.
+  rpc GetUser (GetUserRequest) returns (UserResponse);
+
+  // RPC method for updating a user's profile.
+  rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UserResponse);
+
+  // RPC method for the admin to list all users.
+  rpc ListAllUsers (EmptyRequest) returns (ListUsersResponse);
+}
+
+// --- Message Definitions ---
+
+// Represents a user's data.
+message User {
+  string id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+// Request message for creating a user.
+message RegisterUserRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+// Request message for logging in.
+message LoginUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+// Response message for a successful login. Contains a token.
+message LoginUserResponse {
+  string token = 1;
+}
+
+// Request message for getting a single user by their ID.
+message GetUserRequest {
+  string user_id = 1;
+}
+
+// Request message for updating a user's profile.
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+}
+
+// A generic response that returns a single user's details.
+message UserResponse {
+  User user = 1;
+}
+
+// A request message that has no parameters.
+message EmptyRequest {}
+
+// The response message containing a list of all users.
+message ListUsersResponse {
+  repeated User users = 1; // 'repeated' means this field can appear multiple times.
+}
