@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+  <h1>Welcome, {{ user.username }}!</h1>
+  
+  <div class="profile-details">
+    <h2>Your Details</h2>
+    <p><strong>User ID:</strong> {{ user.id }}</p>
+    <p><strong>Username:</strong> {{ user.username }}</p>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+  </div>
+
+  <hr>
+  
+  <a href="{{ url_for('logout') }}">Logout</a>
+
+  <style>
+    .profile-details {
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        padding: 15px;
+        border-radius: 5px;
+    }
+  </style>
+{% endblock %}
