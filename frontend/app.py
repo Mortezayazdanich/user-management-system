@@ -106,6 +106,44 @@ def profile():
             
         return redirect(url_for('login'))
 
+@app.route('/profile/edit', methods=('GET', 'POST'))
+def edit_profile():
+    if 'user_id' not in session:
+        flash('Please log in to edit your profile.', 'error')
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    if request.method == 'POST':
+        # now we'll update the user's profile using the form data
+        # Get the updated data from the form
+        username = request.form['username']
+        email = request.form['email']
+
+        try:
+            # Create a gRPC request to update the user
+            grpc_request = user_pb2.UpdateUserProfileRequest(
+                user_id=user_id,
+                username=username,
+                email=email
+            )
+            response = stub.UpdateUserProfile(grpc_request)
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('profile'))
+
+        except grpc.RpcError as e:
+            # Handle errors from the gRPC server
+            flash(f"Error updating profile: {e.details()}", 'error')
+            return redirect(url_for('edit_profile'))
+        
+        # Handling initial page load for GET request
+    try:
+        grpc_request = user_pb2.GetUserRequest(user_id=user_id)
+        response = stub.GetUser(grpc_request)
+        return render_template('edit_profile.html', user=response.user)
+    except grpc.RpcError as e:
+        flash(f"Error fetching profile for edit: {e.details()}", 'error')
+        return redirect(url_for('profile'))
+        
 
 
 @app.route('/logout')

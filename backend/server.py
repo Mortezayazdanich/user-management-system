@@ -118,6 +118,46 @@ class UserServiceServicer(user_pb2_grpc.UserServiceServicer):
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details('User not found')
             return user_pb2.UserResponse()
+        
+
+    def UpdateUserProfile(self, request, context):
+        user_id = request.user_id
+        new_username = request.username
+        new_email = request.email
+        print(f"UpdateUserProfile request received for user_id: {user_id}")
+
+        conn = sqlite3.connect('users.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+
+        try:
+            # Check if the new username and email is being used by another user
+            cursor.execute("SELECT id FROM users WHERE id != ? AND (username = ? OR email = ?)", (user_id, new_username, new_email))
+            if cursor.fetchone():
+                context.set_code(grpc.StatusCode.ALREADY_EXISTS)
+                context.set_details('Username or email already in use by another user')
+                return user_pb2.UserResponse()
+            
+            # If clear, proceed with the update
+            # Update the user's profile
+            cursor.execute("Update users SET username = ?, email = ? WHERE id = ?", (new_username, new_email, user_id))
+            conn.commit()
+        
+            print(f"User {user_id} updated successfully.")
+            # If the update was successful, we can return the updated user information
+            # Since we have the updated data, there's no need to fetch it again from the database.
+            # Return the updated user information
+            updated_user = user_pb2.User(
+                id=user_id,
+                username=new_username,
+                email=new_email
+            )
+            return user_pb2.UserResponse(user=updated_user)
+        finally:
+            conn.close()
+        # If we reach here, it means the user was not found or some other error occurred
+
+        return super().UpdateUserProfile(request, context)
 
 
 
