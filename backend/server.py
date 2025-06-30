@@ -12,6 +12,13 @@ from generated import user_pb2_grpc
 # Import our database initialization function
 from .database import init_db
 
+# Import Authentication libraries
+import jwt
+import os
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
+
+
 # Create a class to define the server functions, derived from
 # user_pb2_grpc.UserServiceServicer
 class UserServiceServicer(user_pb2_grpc.UserServiceServicer):
@@ -84,9 +91,17 @@ class UserServiceServicer(user_pb2_grpc.UserServiceServicer):
             # Check if the provided password matches the hashed password in the DB
             if bcrypt.checkpw(password, user_record['hashed_password']):
                 print(f"User {user_record['username']} logged in successfully.")
-                # In a real app, you'd generate a JWT or session token.
-                # For simplicity, we'll use the user's ID as a "token".
-                token = user_record['id']
+                
+                payload = {
+                'user_id': user_record['id'],
+                'username': user_record['username'],
+                'exp': datetime.utcnow() + timedelta(hours=24),  # Expiration time
+                'iat': datetime.utcnow()  # Issued at time
+                }
+            
+                secret_key = os.getenv('JWT_SECRET_KEY')
+                token = jwt.encode(payload, secret_key, algorithm='HS256')
+
                 return user_pb2.LoginUserResponse(token=token)
 
         # If user not found or password incorrect
@@ -97,8 +112,35 @@ class UserServiceServicer(user_pb2_grpc.UserServiceServicer):
     
     def GetUser(self, request, context):
         print(f"GetUser request received for user_id: {request.user_id}")
-        user_id = request.user_id
+        # Get metadata from the call
+        metadata = dict(context.invocation_metadata())
+        token = metadata.get('authorization', None)
 
+        if not token:
+            context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+            context.set_details("Missing authentication token")
+            return user_pb2.UserResponse()
+
+        # The token comes in as "Bearer <token>"
+        token = token.replace('Bearer ', '')
+        
+        try:
+            # Decode and verify the JWT
+            secret_key = os.getenv('JWT_SECRET_KEY')
+            payload = jwt.decode(token, secret_key, algorithms=['HS256'])
+            user_id = payload['user_id']
+
+        except jwt.ExpiredSignatureError:
+            context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+            context.set_details("Token has expired")
+            return user_pb2.UserResponse()
+        except jwt.InvalidTokenError:
+            context.set_code(grpc.StatusCode.UNAUTHENTICATED)
+            context.set_details("Invalid token")
+            return user_pb2.UserResponse()
+
+        # If token is valid, fetch user from DB
+        print(f"GetUser request received for user_id from token: {user_id}")
         conn = sqlite3.connect('users.db')
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -156,8 +198,33 @@ class UserServiceServicer(user_pb2_grpc.UserServiceServicer):
         finally:
             conn.close()
         # If we reach here, it means the user was not found or some other error occurred
+    
+    def ListAllUsers(self, request, context):
+        print("ListAllUsers request received")
+        conn = sqlite3.connect('users.db')
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
 
-        return super().UpdateUserProfile(request, context)
+        try:
+            cursor.execute("SELECT id, username, email FROM users ORDER BY username")
+            user_records = cursor.fetchall()
+
+            # Create a list of User messages
+            users = []
+            for record in user_records:
+                users.append(user_pb2.User(
+                    id=record["id"],
+                    username=record["username"],
+                    email=record["email"]
+                ))
+
+            # Return the list of users wrapped in a ListUsersResponse
+            return user_pb2.ListUsersResponse(users=users)
+        finally:
+            conn.close()
+
+    
+
 
 
 

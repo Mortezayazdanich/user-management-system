@@ -47,7 +47,7 @@ class UserServiceStub(object):
                 _registered_method=True)
         self.GetUser = channel.unary_unary(
                 '/user.UserService/GetUser',
-                request_serializer=user__pb2.GetUserRequest.SerializeToString,
+                request_serializer=user__pb2.EmptyRequest.SerializeToString,
                 response_deserializer=user__pb2.UserResponse.FromString,
                 _registered_method=True)
         self.UpdateUserProfile = channel.unary_unary(
@@ -82,6 +82,7 @@ class UserServiceServicer(object):
 
     def GetUser(self, request, context):
         """RPC method for getting a user's profile information.
+        rpc GetUser (GetUserRequest) returns (UserResponse);
         """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -116,7 +117,7 @@ def add_UserServiceServicer_to_server(servicer, server):
             ),
             'GetUser': grpc.unary_unary_rpc_method_handler(
                     servicer.GetUser,
-                    request_deserializer=user__pb2.GetUserRequest.FromString,
+                    request_deserializer=user__pb2.EmptyRequest.FromString,
                     response_serializer=user__pb2.UserResponse.SerializeToString,
             ),
             'UpdateUserProfile': grpc.unary_unary_rpc_method_handler(
@@ -210,7 +211,7 @@ class UserService(object):
             request,
             target,
             '/user.UserService/GetUser',
-            user__pb2.GetUserRequest.SerializeToString,
+            user__pb2.EmptyRequest.SerializeToString,
             user__pb2.UserResponse.FromString,
             options,
             channel_credentials,
