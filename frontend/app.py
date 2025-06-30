@@ -73,7 +73,7 @@ def login():
             return redirect(url_for('profile'))
 
         except grpc.RpcError as e:
-            flash(e.details(), 'error')
+            flash(f"Login Error: {e.details()}", 'error')
             return redirect(url_for('login'))
             
     return render_template('login.html')
@@ -93,7 +93,7 @@ def profile():
         metadata = [('authorization', f'Bearer {jwt_token}')]
         
         # 2. Call the GetUser RPC on the backend
-        response = stub.GetUser(grpc_request)
+        response = stub.GetUser(grpc_request, metadata=metadata)
         
         # 3. The user data is in response.user. Pass it to the template.
         return render_template('profile.html', user=response.user)
