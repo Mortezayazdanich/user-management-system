@@ -13,7 +13,8 @@ service UserService {
   rpc LoginUser (LoginUserRequest) returns (LoginUserResponse);
 
   // RPC method for getting a user's profile information.
-  rpc GetUser (GetUserRequest) returns (UserResponse);
+  //rpc GetUser (GetUserRequest) returns (UserResponse);
+  rpc GetUser (EmptyRequest) returns (UserResponse);
 
   // RPC method for updating a user's profile.
   rpc UpdateUserProfile (UpdateUserProfileRequest) returns (UserResponse);
@@ -50,9 +51,9 @@ message LoginUserResponse {
 }
 
 // Request message for getting a single user by their ID.
-message GetUserRequest {
-  string user_id = 1;
-}
+//message GetUserRequest {
+//  string user_id = 1;
+//}
 
 // Request message for updating a user's profile.
 message UpdateUserProfileRequest {
