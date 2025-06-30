@@ -16,7 +16,7 @@ from generated import user_pb2_grpc
 # Import our database initialization function
 from .database import init_db
 
-# THIS MUST BE AT THE TOP LEVEL OF THE SCRIPT
+
 load_dotenv()
 
 
